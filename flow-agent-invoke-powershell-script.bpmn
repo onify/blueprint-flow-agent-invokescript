@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" id="Definitions_0ye1qph" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.5.0">
+  <bpmn:process id="Process_0qix6k6" name="Onify Blueprint: Flow and Agent invoke PowerShell script" isExecutable="true">
+    <bpmn:documentation>NOTE: InvokeScript.ps1 needs to be in scripts-folder on Agent</bpmn:documentation>
+    <bpmn:sequenceFlow id="Flow_1shw0x3" sourceRef="StartEvent_1" targetRef="Activity_0knmhme" />
+    <bpmn:endEvent id="Event_00vranh" name="End">
+      <bpmn:incoming>Flow_12ep2sp</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:scriptTask id="Activity_0knmhme" name="Generate PowerShell script" scriptFormat="javascript" camunda:resultVariable="ps1ScriptEncoded">
+      <bpmn:incoming>Flow_1shw0x3</bpmn:incoming>
+      <bpmn:outgoing>Flow_1xzwt6i</bpmn:outgoing>
+      <bpmn:script>let ps1Script = `
+Get-ComputerInfo -Property "os*" | ConvertTo-Json -Depth 100
+`;
+
+let ps1ScriptEncoded = Buffer.from(ps1Script).toString('base64');
+
+next(null, ps1ScriptEncoded);</bpmn:script>
+    </bpmn:scriptTask>
+    <bpmn:sequenceFlow id="Flow_1xzwt6i" sourceRef="Activity_0knmhme" targetRef="executeScript" />
+    <bpmn:scriptTask id="Activity_0firuxj" name="Console log" scriptFormat="javascript">
+      <bpmn:incoming>Flow_0lbs0md</bpmn:incoming>
+      <bpmn:outgoing>Flow_12ep2sp</bpmn:outgoing>
+      <bpmn:script>var obj = JSON.parse(environment.output.scriptResult)
+console.log("OsName: " + obj.OsName);
+console.log("OsVersion: " + obj.OsVersion);
+console.log("OsLanguage: " + obj.OsLanguage);
+
+environment.output = obj
+
+next();</bpmn:script>
+    </bpmn:scriptTask>
+    <bpmn:sequenceFlow id="Flow_12ep2sp" sourceRef="Activity_0firuxj" targetRef="Event_00vranh" />
+    <bpmn:serviceTask id="executeScript" name="Execute PowerShell script on Agent">
+      <bpmn:extensionElements>
+        <camunda:connector>
+          <camunda:inputOutput>
+            <camunda:inputParameter name="method">post</camunda:inputParameter>
+            <camunda:inputParameter name="query">
+              <camunda:map>
+                <camunda:entry key="tag">agent</camunda:entry>
+                <camunda:entry key="async">${true}</camunda:entry>
+              </camunda:map>
+            </camunda:inputParameter>
+            <camunda:inputParameter name="payload">
+              <camunda:script scriptFormat="javascript">let payload = {};
+payload.vars = ["-ScriptBase64Encoded " + environment.output.ps1ScriptEncoded]
+next(null, payload);</camunda:script>
+            </camunda:inputParameter>
+            <camunda:inputParameter name="url">/admin/agents/task/InvokeScript</camunda:inputParameter>
+          </camunda:inputOutput>
+          <camunda:connectorId>onifyElevatedApiRequest</camunda:connectorId>
+        </camunda:connector>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1xzwt6i</bpmn:incoming>
+      <bpmn:outgoing>Flow_1poo7x0</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_1poo7x0" sourceRef="executeScript" targetRef="Event_1shjpbq" />
+    <bpmn:intermediateCatchEvent id="Event_1shjpbq" name="Wait for agent task to finish">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="scriptResult">${content.output.result.response}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1poo7x0</bpmn:incoming>
+      <bpmn:outgoing>Flow_0lbs0md</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0sbpi2c" messageRef="Message_0mp359t" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="Flow_0lbs0md" sourceRef="Event_1shjpbq" targetRef="Activity_0firuxj" />
+    <bpmn:startEvent id="StartEvent_1" name="Start">
+      <bpmn:outgoing>Flow_1shw0x3</bpmn:outgoing>
+    </bpmn:startEvent>
+  </bpmn:process>
+  <bpmn:message id="Message_0mp359t" name="executeScript" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_0qix6k6">
+      <bpmndi:BPMNEdge id="Flow_0lbs0md_di" bpmnElement="Flow_0lbs0md">
+        <di:waypoint x="648" y="117" />
+        <di:waypoint x="705" y="117" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1poo7x0_di" bpmnElement="Flow_1poo7x0">
+        <di:waypoint x="560" y="117" />
+        <di:waypoint x="612" y="117" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12ep2sp_di" bpmnElement="Flow_12ep2sp">
+        <di:waypoint x="805" y="117" />
+        <di:waypoint x="844" y="117" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1xzwt6i_di" bpmnElement="Flow_1xzwt6i">
+        <di:waypoint x="400" y="117" />
+        <di:waypoint x="460" y="117" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1shw0x3_di" bpmnElement="Flow_1shw0x3">
+        <di:waypoint x="215" y="117" />
+        <di:waypoint x="300" y="117" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_00vranh_di" bpmnElement="Event_00vranh">
+        <dc:Bounds x="844" y="99" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="852" y="142" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0q7d1kf_di" bpmnElement="Activity_0knmhme">
+        <dc:Bounds x="300" y="77" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0firuxj_di" bpmnElement="Activity_0firuxj">
+        <dc:Bounds x="705" y="77" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_04r0slq_di" bpmnElement="executeScript" bioc:stroke="black" bioc:fill="white">
+        <dc:Bounds x="460" y="77" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1shjpbq_di" bpmnElement="Event_1shjpbq">
+        <dc:Bounds x="612" y="99" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="597" y="142" width="68" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0ui8y6q_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="99" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="185" y="142" width="25" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
