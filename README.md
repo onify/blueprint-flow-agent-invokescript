@@ -1,6 +1,10 @@
-# Onify Blueprint: Flow and Agent invoke PowerShell script
+![Onify Blueprints](https://files.readme.io/8ba3f14-onify-blueprints-logo.png)
 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+
+# Onify Blueprint: Flow and Agent invoke PowerShell script
+
+Generate a PowerShell script and run it on a Onify Agent. A simple way to generate any type of script and then run it on any agent. The PowerShell script is generated using JavaScript :)
 
 ![alt text](flow.png "Flow")
 
