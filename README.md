@@ -10,7 +10,7 @@ Generate a PowerShell script and run it on a Onify Agent. A simple way to genera
 
 ## Requirements
 
-* Onify Hub v2
+* Onify Hub API 2.3.0 or later
 * Onify Flow license
 * Camunda Modeler 4.4 or later 
 * Onify Agent with PowerShell
