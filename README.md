@@ -8,7 +8,7 @@ Generate a PowerShell script and run it on a Onify Agent. A simple way to genera
 > Note: This the agent task and script is running in async mode.
 
 
-![alt text](flow.png "Flow")
+![Onify Blueprint: Flow and Agent invoke PowerShell script](blueprint.jpg "Blueprint")
 
 ## Requirements
 
